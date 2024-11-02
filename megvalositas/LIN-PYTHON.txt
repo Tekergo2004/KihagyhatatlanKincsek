@@ -1,0 +1,63 @@
+apt install python3-pip python3-venv apache2 libapache2-mod-wsgi-py3 python3-flask python3-paramiko
+
+
+
+cd /var/www/ssh_website
+python3 -m venv venv
+
+nano /var/www/ssh_website/ssh_website.wsgi
+import sys
+import os
+
+# Add the virtual environment's site-packages to the system path
+venv_path = '/var/www/ssh_website/venv/lib/python3.x/site-packages'  # Replace '3.x' with your Python version (e.g., 3.8, 3.9)
+sys.path.insert(0, venv_path)
+
+# Add the application directory to the path
+sys.path.insert(0, '/var/www/ssh_website')
+
+# Import your Flask app
+from app import app as application
+
+
+
+nano /etc/apache2/sites-available/ssh_website.conf
+<VirtualHost *:443>
+    ServerName 192.168.132.155
+
+    WSGIDaemonProcess ssh_website python-path=/var/www/ssh_website:/var/www/ssh_website/venv/lib/python3.9/site-packages
+    WSGIProcessGroup ssh_website
+    WSGIScriptAlias / /var/www/ssh_website/ssh_website.wsgi
+
+    SSLEngine on
+    SSLCertificateFile      /etc/cert/apache2/apache2.crt
+    SSLCertificateKeyFile   /etc/cert/apache2/apache2.key
+
+     <FilesMatch "\.(?:cgi|shtml|phtml|php)$">
+          SSLOptions +StdEnvVars
+     </FilesMatch>
+     <Directory /usr/lib/cgi-bin>
+          SSLOptions +StdEnvVars
+     </Directory>
+
+    <Directory /var/www/ssh_website>
+        Require all granted
+    </Directory>
+
+    Alias /static /var/www/ssh_website/static
+    <Directory /var/www/ssh_website/static>
+        Require all granted
+    </Directory>
+
+    ErrorLog ${APACHE_LOG_DIR}/ssh_website_error.log
+    CustomLog ${APACHE_LOG_DI
+a2ensite ssh_website
+sudo systemctl restart apache2
+
+chown -R www-data:www-data /var/www/ssh_website
+chmod -R 755 /var/www/ssh_website
+
+
+mkdir -p /etc/cert/apache2
+cd /etc/cert/apache2
+openssl req -newkey rsa:4096 -x509 -nodes -days 3650 -keyout apache2.key -out apache2.crt
