@@ -1,0 +1,77 @@
+---
+- name: Configure VLANSs
+  hosts: switch
+  gather_facts: false
+  tasks:
+    - name: Check existing VLANs
+      cisco.ios.ios_command:
+        commands:
+          - show vlan brief
+      register: existing_vlans
+
+    - name: Set VLAN config required fact
+      set_fact:
+        vlan_config_required: "{{ 'yes' if (vlan not in existing_vlans.stdout) else 'no' }}"
+      loop:
+        - 1147
+        - 1173
+        - 1171
+        - 1197
+        - 1119
+        - 37
+        - 29
+        - 11
+        - 41
+        - 13
+        - 69
+      when: "'VLAN {{ item }}' not in existing_vlans.stdout"
+      
+    - name: Trigger VLAN configuration if required
+      debug:
+        msg: "VLAN configuration needed. Configuring VLANs."
+      when: vlan_config_required == "yes"
+      notify: configure_vlans
+
+  handlers:
+    - name: configure_vlans
+      cisco.ios.ios_vlans:
+        config:
+          - name: ADMINISZTRACIO
+            vlan_id: 1147
+            state: active
+          - name: MARKETING
+            vlan_id: 1173
+            state: active
+          - name: VEZETO
+            vlan_id: 1171
+            state: active
+          - name: KIADO
+            vlan_id: 1197
+            state: active
+          - name: ZENE
+            vlan_id: 1119
+            state: active
+          - name: MANAGEMENT
+            vlan_id: 37
+            state: active
+          - name: BLACKHOLE
+            vlan_id: 29
+            state: active
+          - name: NATIVE
+            vlan_id: 11
+            state: active
+          - name: WIFI
+            vlan_id: 41
+            state: active
+          - name: SRV
+            vlan_id: 13
+            state: active
+          - name: IT
+            vlan_id: 69
+            state: active
+        state: merged
+
+    - name: "Confirm the Commit"
+      cisco.ios.ios_command:
+        commands:
+          - do wr
