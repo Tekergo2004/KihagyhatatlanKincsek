@@ -1,0 +1,103 @@
+all:
+  vars:
+    ansible_user: Administrator@KKK.COM
+    ansible_password: Password123
+    ansible_connection: winrm
+    ansible_port: 5985
+    ansible_winrm_transport: basic
+    ansible_winrm_server_cert_validation: ignore
+    ansible_become_method: runas
+    ansible_become_user: KKK\Administrator
+    ansible_become_password: Password123
+
+    dns:
+      reversezones:
+        - networkid: "10.11.113.0/24"
+          zonefile: "113.11.10.in-addr.arpa.dns"
+        
+        - networkid: "10.11.199.0/24"
+          zonefile: "199.11.10.in-addr.arpa.dns"
+
+        - networkid: "2001:db8:c1c1:abfa::/64"
+          zonefile: "a.f.b.a.1.c.1.c.8.b.d.0.1.0.0.2.ip6.arpa.dns"
+
+        - networkid: "2001:db8:c1c1:abb5::/64"
+          zonefile: "5.b.b.a.1.c.1.c.8.b.d.0.1.0.0.2.ip6.arpa.dns"
+
+
+      records:
+        - name: "kkk-lin"
+          type: "A"
+          value: "10.11.113.5"
+          zonename: "kkk.com"
+        
+        - name: "kkk-proxy"
+          type: "A"
+          value: "10.11.199.5"
+          zonename: "kkk.com"
+        
+        - name: "kkk-backup"
+          type: "A"
+          value: "10.11.113.12"
+          zonename: "kkk.com"
+
+        - name: "kkk-lin"
+          type: "AAAA"
+          value: "2001:db8:c1c1:abfa::5"
+          zonename: "kkk.com"
+
+        - name: "kkk-adds"
+          type: "AAAA"
+          value: "2001:db8:c1c1:abfa::10"
+          zonename: "kkk.com"
+
+        - name: "kkk-rodc"
+          type: "AAAA"
+          value: "2001:db8:c1c1:abfa::11"
+          zonename: "kkk.com"
+
+
+        - name: "kkk-backup"
+          type: "AAAA"
+          value: "2001:db8:c1c1:abfa::12"
+          zonename: "kkk.com"
+        
+        - name: "kkk-proxy"
+          type: "AAAA"
+          value: "2001:db8:c1c1:abb5::5"
+          zonename: "kkk.com"
+      
+        - name: "mail"
+          type: "CNAME"
+          value: "kkk-lin.kkk.com"
+          zonename: "kkk.com"
+        
+        - name: "vpn"
+          type: "CNAME"
+          value: "kkk-lin.kkk.com"
+          zonename: "kkk.com"
+        
+        - name: "radius"
+          type: "CNAME"
+          value: "kkk-lin.kkk.com"
+          zonename: "kkk.com"
+
+        - name: "file"
+          type: "CNAME"
+          value: "kkk-adds.kkk.com"
+          zonename: "kkk.com"
+
+        - name: "python"
+          type: "CNAME"
+          value: "kkk-lin.kkk.com"
+          zonename: "kkk.com"
+
+mainhq:
+  hosts:
+    KKK-ADDS:
+      ansible_host: 192.168.19.200
+      hostname: KKK-ADDS
+
+    KKK-RODC:
+      ansible_host: 192.168.19.201
+      hostname: KKK-RODC

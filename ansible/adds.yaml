@@ -1,0 +1,74 @@
+---
+- name: KKK-ADDS domain creation
+  hosts: KKK-ADDS
+  gather_facts: false
+  tasks:
+  - name: Create KKK domain
+    win_domain:
+      safe_mode_password: Password123
+      dns_domain_name: kkk.com
+    register: domain
+  
+  - name: Reboot
+    win_reboot:
+    when: domain.reboot_required
+  
+  - name: Domain Controller Promotion
+    win_domain_controller:
+      dns_domain_name: kkk.com
+      domain_admin_user: KKK\Administrator
+      domain_admin_password: Password123
+      state: domain_controller
+      safe_mode_password: Password123
+    register: dc
+  
+  - name: Reboot
+    win_reboot:
+    when: dc.reboot_required
+
+
+- name: Join KKK-RODC to domain
+  hosts: KKK-RODC
+  gather_facts: false
+  tasks:
+  - name: Joining domain
+    win_domain_membership:
+      domain_admin_user: KKK\Administrator
+      domain_admin_password: Password123
+      state: domain
+      dns_domain_name: kkk.com
+    register: domain
+  
+  - name: Reboot
+    win_reboot:
+    when: domain.reboot_required
+
+
+- name: Promoting KKK-RODC to RODC
+  hosts: KKK-RODC
+  become: True
+  become_method: runas
+  vars:
+    ansible_become_user: KKK\Administrator
+    ansible_become_password: Password123
+  gather_facts: false
+  tasks:
+  - name: Installing ADDS
+    win_feature:
+      name: AD-Domain-Services
+      include_management_tools: True
+      include_all_subfeatures: True
+  
+  - name: Promoting to RODC
+    win_domain_controller:
+      dns_domain_name: kkk.com
+      domain_admin_user: KKK\Administrator
+      domain_admin_password: Password123
+      state: domain_controller
+      safe_mode_password: Password123
+      read_only: True
+    register: rodc
+  
+  - name: Reboot
+    win_reboot:
+    when: rodc.reboot_required

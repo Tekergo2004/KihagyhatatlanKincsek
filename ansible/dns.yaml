@@ -1,0 +1,66 @@
+---
+- name: DNS zone creation
+  hosts: KKK-ADDS
+  gather_facts: false
+  become: true
+  become_method: runas
+  tasks:
+  - name: Check DNS zone
+    ansible.windows.win_shell: |
+      if (Get-DnsServerZone -Name "0.113.11.10.in-addr.arpa" -ErrorAction SilentlyContinue) {
+        Write-Output "ZoneExists"
+      } else {
+        Write-Output "ZoneDoesNotExist"
+      }
+    register: dns_zone_check
+    changed_when: '"ZoneDoesNotExist" in dns_zone_check.stdout '
+    notify: Configure DNS zone 
+
+  handlers:
+  - name: Create DNS zones
+    ansible.windows.win_shell: >
+      Add-DnsServerPrimaryZone -NetworkId "{{item.networkid}}" -ZoneFile "{{item.zonefile}}"
+    loop: "{{ dns.reversezones }}"
+    listen: Configure DNS zone
+
+- name: DNS record creation
+  hosts: KKK-ADDS
+  gather_facts: false
+  become: true
+  become_method: runas
+  tasks:
+  - name: Check DNS record
+    ansible.windows.win_shell: "nslookup mail.kkk.com"
+    register: nslookup
+    changed_when: '"10.11.113.5" not in nslookup.stdout or "2001:db8:c1c1:abfa::5" not in nslookup.stdout'
+    notify: Configure DNS record 
+  
+  handlers:
+  - name: Create A records
+    ansible.windows.win_shell: >
+      Add-DnsServerResourceRecord{{ item.type }} -ZoneName "{{item.zonename}}" -Name "{{ item.name }}" -IPv4Address "{{ item.value }}" -CreatePtr
+    loop: "{{ dns.records }}"
+    when: item.type == 'A'
+    listen: Configure DNS record
+
+  - name: Create AAAA records
+    ansible.windows.win_shell: >
+      Add-DnsServerResourceRecord{{ item.type }} -ZoneName "{{item.zonename}}" -Name "{{ item.name }}" -IPv6Address "{{ item.value }}" -CreatePtr
+    loop: "{{ dns.records }}"
+    when: item.type == 'AAAA'
+    listen: Configure DNS record
+  
+  - name: Create CNAME records
+    ansible.windows.win_shell: >
+      Add-DnsServerResourceRecord{{ item.type }} -ZoneName "{{item.zonename}}" -Name "{{ item.name }}" -HostNameAlias "{{ item.value }}"
+    loop: "{{ dns.records }}"
+    when: item.type == 'CNAME'
+    listen: Configure DNS record
+
+  - name: Add DNS forwarder
+    ansible.windows.win_shell: >
+      Add-DnsServerForwarder -IPAddress "8.8.8.8" -PassThru
+    listen: Configure DNS record
+
+    
+
