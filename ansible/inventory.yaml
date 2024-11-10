@@ -22,19 +22,84 @@ all:
       - GigabitEthernet0/6
 
 
+    dhcp:
+      scope:
+        - name: "ADMINISZTRACIO"
+          start: "10.11.47.X" 
+          end: "10.11.47.X"
+          netmask: "255.255.255.224"
+          scopeid: "10.11.47.0"
+          dns: "10.11.113.10"
+          wins: "10.11.113.10"
+          gateway: "10.11.47.X"
+        
+        - name: "MARKETING"
+          start: "10.11.73.X" 
+          end: "10.11.73.X"
+          netmask: "255.255.255.192"
+          scopeid: "10.11.73.0"
+          dns: "10.11.113.10"
+          wins: "10.11.113.10"
+          gateway: "10.11.73.X"
+        
+        - name: "VEZETO"
+          start: "10.11.71.X" 
+          end: "10.11.71.X"
+          netmask: "255.255.255.240"
+          scopeid: "10.11.71.0"
+          dns: "10.11.113.10"
+          wins: "10.11.113.10"
+          gateway: "10.11.71.X"
+        
+        - name: "KIADO"
+          start: "10.11.97.X" 
+          end: "10.11.97.X"
+          netmask: "255.255.255.224"
+          scopeid: "10.11.97.0"
+          dns: "10.11.113.10"
+          wins: "10.11.113.10"
+          gateway: "10.11.97.X"
+        
+        - name: "ZENE"
+          start: "10.11.19.X" 
+          end: "10.11.19.X"
+          netmask: "255.255.255.192"
+          scopeid: "10.11.19.0"
+          dns: "10.11.113.10"
+          wins: "10.11.113.10"
+          gateway: "10.11.19.X"
+        
+        - name: "WIFI"
+          start: "10.11.140.X" 
+          end: "10.11.140.X"
+          netmask: "255.255.252.0"
+          scopeid: "10.11.140.0"
+          dns: "10.11.113.10"
+          wins: "10.11.113.10"
+          gateway: "10.11.140.X"
+        
+        - name: "IT"
+          start: "10.11.169.X" 
+          end: "10.11.169.X"
+          netmask: "255.255.255.240"
+          scopeid: "10.11.169.0"
+          dns: "10.11.113.10"
+          wins: "10.11.113.10"
+          gateway: "10.11.169.X"
+    
     dns:
       reversezones:
         - networkid: "10.11.113.0/24"
-          zonefile: "113.11.10.in-addr.arpa.dns"
+          name: "113.11.10.in-addr.arpa"
 
         - networkid: "10.11.199.0/24"
-          zonefile: "199.11.10.in-addr.arpa.dns"
+          name: "199.11.10.in-addr.arpa"
 
         - networkid: "2001:db8:c1c1:abfa::/64"
-          zonefile: "a.f.b.a.1.c.1.c.8.b.d.0.1.0.0.2.ip6.arpa.dns"
+          name: "a.f.b.a.1.c.1.c.8.b.d.0.1.0.0.2.ip6.arpa"
 
         - networkid: "2001:db8:c1c1:abb5::/64"
-          zonefile: "5.b.b.a.1.c.1.c.8.b.d.0.1.0.0.2.ip6.arpa.dns"
+          name: "5.b.b.a.1.c.1.c.8.b.d.0.1.0.0.2.ip6.arpa"
 
 
       a_records:
