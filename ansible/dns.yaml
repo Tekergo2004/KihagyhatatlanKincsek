@@ -1,66 +1,72 @@
 ---
-- name: DNS zone creation
-  hosts: KKK-ADDS
-  gather_facts: false
-  become: true
-  become_method: runas
-  tasks:
-  - name: Check DNS zone
-    ansible.windows.win_shell: |
-      if (Get-DnsServerZone -Name "0.113.11.10.in-addr.arpa" -ErrorAction SilentlyContinue) {
-        Write-Output "ZoneExists"
-      } else {
-        Write-Output "ZoneDoesNotExist"
-      }
-    register: dns_zone_check
-    changed_when: '"ZoneDoesNotExist" in dns_zone_check.stdout '
-    notify: Configure DNS zone 
-
-  handlers:
-  - name: Create DNS zones
-    ansible.windows.win_shell: >
-      Add-DnsServerPrimaryZone -NetworkId "{{item.networkid}}" -ZoneFile "{{item.zonefile}}"
-    loop: "{{ dns.reversezones }}"
-    listen: Configure DNS zone
-
-- name: DNS record creation
-  hosts: KKK-ADDS
-  gather_facts: false
-  become: true
-  become_method: runas
-  tasks:
-  - name: Check DNS record
-    ansible.windows.win_shell: "nslookup mail.kkk.com"
-    register: nslookup
-    changed_when: '"10.11.113.5" not in nslookup.stdout or "2001:db8:c1c1:abfa::5" not in nslookup.stdout'
-    notify: Configure DNS record 
+  - name: DNS zone and record creation
+    hosts: KKK-ADDS
+    gather_facts: false
+    tasks:
+      - name: Check if DNS zone exists
+        win_shell: |
+          if (Get-DnsServerZone -Name 113.11.10.in-addr.arpa -ErrorAction SilentlyContinue) {
+            Write-Output "ZoneExists"
+          } else {
+            Write-Output "ZoneDoesNotExist"
+          }
+        register: dns_zone_check
+        changed_when: false
   
-  handlers:
-  - name: Create A records
-    ansible.windows.win_shell: >
-      Add-DnsServerResourceRecord{{ item.type }} -ZoneName "{{item.zonename}}" -Name "{{ item.name }}" -IPv4Address "{{ item.value }}" -CreatePtr
-    loop: "{{ dns.records }}"
-    when: item.type == 'A'
-    listen: Configure DNS record
-
-  - name: Create AAAA records
-    ansible.windows.win_shell: >
-      Add-DnsServerResourceRecord{{ item.type }} -ZoneName "{{item.zonename}}" -Name "{{ item.name }}" -IPv6Address "{{ item.value }}" -CreatePtr
-    loop: "{{ dns.records }}"
-    when: item.type == 'AAAA'
-    listen: Configure DNS record
+      - name: Check if DNS A record exists
+        win_shell: "nslookup 10.11.113.5"
+        register: nslookup_check
+        changed_when: false
   
-  - name: Create CNAME records
-    ansible.windows.win_shell: >
-      Add-DnsServerResourceRecord{{ item.type }} -ZoneName "{{item.zonename}}" -Name "{{ item.name }}" -HostNameAlias "{{ item.value }}"
-    loop: "{{ dns.records }}"
-    when: item.type == 'CNAME'
-    listen: Configure DNS record
-
-  - name: Add DNS forwarder
-    ansible.windows.win_shell: >
-      Add-DnsServerForwarder -IPAddress "8.8.8.8" -PassThru
-    listen: Configure DNS record
-
-    
-
+      - name: Check if DNS AAAA record exists
+        win_shell: |
+          nslookup 2001:db8:c1c1:abfa::5
+        register: nslookup_aaaa_check
+        changed_when: false
+  
+      - name: Check if CNAME record exists
+        win_shell: |
+          nslookup -type=CNAME mail.kkk.com
+        register: nslookup_cname_check
+        changed_when: false
+  
+      - name: Check if DNS forwarder exists
+        win_shell: |
+          $forwarder = Get-DnsServerForwarder | Where-Object {$_.IPAddress -eq 8.8.8.8}
+          if ($forwarder) {
+            Write-Output "ForwarderExists"
+          } else {
+            Write-Output "ForwarderDoesNotExist"
+          }
+        register: dns_forwarder_check
+        changed_when: false
+  
+      - name: Create DNS zones
+        win_shell: >
+          Add-DnsServerPrimaryZone -NetworkId "{{ item.networkid }}" -ReplicationScope "Forest" -ZoneFile "{{ item.zonefile }}"
+        loop: "{{ dns.reversezones }}"
+        when: '"ZoneDoesNotExist" in dns_zone_check.stdout'
+  
+      - name: Create A records
+        win_shell: >
+          Add-DnsServerResourceRecordA -ZoneName "{{item.zonename}}" -Name "{{ item.name }}" -IPv4Address "{{ item.value }}" -CreatePtr
+        loop: "{{ dns.a_records }}"
+        when: "'kkk-lin.kkk.com' not in nslookup_check.stdout"
+  
+      - name: Create AAAA records
+        win_shell: >
+          Add-DnsServerResourceRecordAAAA -ZoneName "{{item.zonename}}" -Name "{{ item.name }}" -IPv6Address "{{ item.value }}" -CreatePtr
+        loop: "{{ dns.aaaa_records }}"
+        when: "'kkk-lin.kkk.com' not in nslookup_aaaa_check.stdout"
+  
+      - name: Create CNAME records
+        win_shell: >
+          Add-DnsServerResourceRecordCNAME -ZoneName "{{item.zonename}}" -Name "{{ item.name }}" -HostNameAlias "{{ item.value }}"
+        loop: "{{ dns.cname_records }}"
+        when: "'kkk-lin.kkk.com' not in nslookup_cname_check.stdout"
+  
+      - name: Add DNS forwarder
+        win_shell: >
+          Add-DnsServerForwarder -IPAddress "{{ dns_forwarder_ip }}" -PassThru
+        when: '"ForwarderDoesNotExist" in dns_forwarder_check.stdout'
+  

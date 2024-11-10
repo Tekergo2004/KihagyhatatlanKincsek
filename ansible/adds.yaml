@@ -1,74 +1,125 @@
 ---
-- name: KKK-ADDS domain creation
-  hosts: KKK-ADDS
-  gather_facts: false
-  tasks:
-  - name: Create KKK domain
-    win_domain:
-      safe_mode_password: Password123
-      dns_domain_name: kkk.com
-    register: domain
+  - name: KKK-ADDS domain creation
+    hosts: KKK-ADDS
+    gather_facts: false
+    vars:
+      ansible_user: Administrator
+      ansible_become_user: Administrator
+    tasks:
+    - name: Create KKK domain
+      microsoft.ad.domain:
+        safe_mode_password: Password123
+        dns_domain_name: kkk.com
+      register: domain
+    
+    - name: Reboot
+      win_reboot:
+      when: domain.reboot_required
+    
+    - name: Domain Controller Promotion
+      microsoft.ad.domain_controller:
+        dns_domain_name: kkk.com
+        domain_admin_user: KKK\Administrator
+        domain_admin_password: Password123
+        state: domain_controller
+        safe_mode_password: Password123
+      register: dc
+    
+    - name: Reboot
+      win_reboot:
+      when: dc.reboot_required
   
-  - name: Reboot
-    win_reboot:
-    when: domain.reboot_required
   
-  - name: Domain Controller Promotion
-    win_domain_controller:
-      dns_domain_name: kkk.com
-      domain_admin_user: KKK\Administrator
-      domain_admin_password: Password123
-      state: domain_controller
-      safe_mode_password: Password123
-    register: dc
+  - name: Configure DNS Server on KKK-RODC
+    hosts: KKK-RODC
+    gather_facts: false
+    vars:
+      ansible_user: Administrator
+      ansible_become_user: Administrator
+      desired_dns_servers:
+        - 10.11.113.10
+        - "2001:db8:c1c1:abfa::10"
+    tasks:
+    - name: Check current DNS server addresses
+      win_shell: |
+        $adapter = Get-DnsClientServerAddress | Where-Object { $_.InterfaceAlias -eq 'Ethernet0' }
+        $dnsAddresses = $adapter.ServerAddresses
+        $dnsAddresses | Sort-Object | ForEach-Object { $_.Trim() }
+      register: current_dns
+      changed_when: false
   
-  - name: Reboot
-    win_reboot:
-    when: dc.reboot_required
-
-
-- name: Join KKK-RODC to domain
-  hosts: KKK-RODC
-  gather_facts: false
-  tasks:
-  - name: Joining domain
-    win_domain_membership:
-      domain_admin_user: KKK\Administrator
-      domain_admin_password: Password123
-      state: domain
-      dns_domain_name: kkk.com
-    register: domain
+    - name: Set DNS server addresses
+      win_dns_client:
+        adapter_names: 'Ethernet0'
+        dns_servers: "{{ desired_dns_servers }}"
+      when: "'10.11.113.10' not in current_dns.stdout_lines and '2001:db8:c1c1:abfa::10' not in current_dns.stdout_lines"
+      changed_when: true
   
-  - name: Reboot
-    win_reboot:
-    when: domain.reboot_required
-
-
-- name: Promoting KKK-RODC to RODC
-  hosts: KKK-RODC
-  become: True
-  become_method: runas
-  vars:
-    ansible_become_user: KKK\Administrator
-    ansible_become_password: Password123
-  gather_facts: false
-  tasks:
-  - name: Installing ADDS
-    win_feature:
-      name: AD-Domain-Services
-      include_management_tools: True
-      include_all_subfeatures: True
   
-  - name: Promoting to RODC
-    win_domain_controller:
-      dns_domain_name: kkk.com
-      domain_admin_user: KKK\Administrator
-      domain_admin_password: Password123
-      state: domain_controller
-      safe_mode_password: Password123
-      read_only: True
-    register: rodc
+  - name: Join KKK-RODC to domain
+    hosts: KKK-RODC
+    gather_facts: false
+    vars:
+      ansible_user: Administrator
+      ansible_become_user: Administrator
+    tasks:
+    - name: Joining domain
+      microsoft.ad.membership:
+        domain_admin_user: KKK\Administrator
+        domain_admin_password: Password123
+        state: domain
+        dns_domain_name: kkk.com
+      register: domain
+    
+    - name: Reboot
+      win_reboot:
+      when: domain.reboot_required
   
-  - name: Reboot
-    win_reboot:
-    when: rodc.reboot_required
+  
+  
+  - name: Join KKK-RODC to domain
+    hosts: KKK-RODC
+    gather_facts: false
+    vars:
+      ansible_user: Administrator
+      ansible_become_user: Administrator
+    tasks:
+    - name: Joining domain
+      microsoft.ad.membership:
+        domain_admin_user: KKK\Administrator
+        domain_admin_password: Password123
+        state: domain
+        dns_domain_name: kkk.com
+      register: domain
+    
+    - name: Reboot
+      win_reboot:
+      when: domain.reboot_required
+  
+  - name: Promoting KKK-RODC to RODC
+    hosts: KKK-RODC
+    vars:
+      ansible_user: Administrator
+      ansible_become_user: Administrator
+    gather_facts: false
+    tasks:
+    - name: Installing ADDS
+      win_feature:
+        name: AD-Domain-Services
+        include_management_tools: True
+        include_all_subfeatures: True
+  
+    - name: Promoting to RODC
+      microsoft.ad.domain_controller:
+        dns_domain_name: kkk.com
+        domain_admin_user: KKK\Administrator
+        domain_admin_password: Password123
+        state: domain_controller
+        safe_mode_password: Password123
+        read_only: True
+        site_name: Default-First-Site-Name
+      register: rodc
+  
+    - name: Reboot
+      win_reboot:
+      when: rodc.reboot_required

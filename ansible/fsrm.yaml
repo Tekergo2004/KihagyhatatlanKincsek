@@ -1,0 +1,69 @@
+---
+    - name: Install FSRM
+      hosts: dist
+      gather_facts: true
+      tasks:
+        - name: Install FSRM
+          ansible.windows.win_feature:
+            name:
+              - FS-Resource-Manager
+            state: present
+            include_management_tools: true
+          notify: Configure FSRM
+    
+      handlers:
+        - name: Create quotas
+          ansible.windows.win_shell: >
+            New-FsrmQuota
+            -Path "C:\Marketing"
+            -Description "limit usage to 20 GB."
+            -Size 20GB
+    
+            New-FsrmQuota
+            -Path "C:\HR"
+            -Description "limit usage to 20 GB."
+            -Size 20GB
+    
+            New-FsrmQuota
+            -Path "C:\IT"
+            -Description "limit usage to 100 GB."
+            -Size 100GB
+          listen: Configure FSRM
+    
+        - name: Create file screen groups
+          ansible.windows.win_shell: >
+            New-FsrmFileGroup
+            -Name "G-Marketing"
+            -IncludePattern "*.*"
+            -ExcludePattern @("*.doc", "*.docx", "*.xls", "*.xlsx", "*.xml", "*.pdf", "*.txt")
+    
+            New-FsrmFileGroup
+            -Name "G-HR"
+            -IncludePattern "*.*"
+            -ExcludePattern @("*.doc", "*.docx", "*.jpg", "*.pdf", "*.txt")
+    
+            New-FsrmFileGroup
+            -Name "G-IT"
+            -IncludePattern "*.exe"
+          listen: Configure FSRM
+    
+        - name: Create file screens
+          ansible.windows.win_shell: >
+            New-FsrmFileScreen
+            -Path "C:\Marketing"
+            -Description "Marketing"
+            -IncludeGroup "G-Marketing"
+            -Active
+    
+            New-FsrmFileScreen
+            -Path "C:\HR"
+            -Description "HR"
+            -IncludeGroup "G-HR"
+            -Active
+    
+            New-FsrmFileScreen
+            -Path "C:\IT"
+            -Description "IT"
+            -IncludeGroup "G-IT"
+            -Active
+          listen: Configure FSRM
