@@ -1,4 +1,31 @@
 ---
+  - name: Add KKK-RODC address to KKK-ADDS dns servers
+    hosts: KKK-ADDS
+    gather_facts: false
+    vars:
+      ansible_user: Administrator
+      ansible_become_user: Administrator
+      desired_dns_servers:
+        - 10.11.113.10
+        - "2001:db8:c1c1:abfa::10"
+        - 10.11.113.11
+        - "2001:db8:c1c1:abfa::11"
+    tasks:
+    - name: Check current DNS server addresses
+      win_shell: |
+        $adapter = Get-DnsClientServerAddress | Where-Object { $_.InterfaceAlias -eq 'Ethernet0' }
+        $dnsAddresses = $adapter.ServerAddresses
+        $dnsAddresses | Sort-Object | ForEach-Object { $_.Trim() }
+      register: current_dns
+      changed_when: false
+  
+    - name: Set DNS server addresses
+      win_dns_client:
+        adapter_names: 'Ethernet0'
+        dns_servers: "{{ desired_dns_servers }}"
+      when: "'10.11.113.11' not in current_dns.stdout_lines and '2001:db8:c1c1:abfa::11' not in current_dns.stdout_lines"
+      changed_when: true
+  
   - name: DNS zone and record creation
     hosts: KKK-ADDS
     gather_facts: false
@@ -32,7 +59,7 @@
   
       - name: Check if DNS forwarder exists
         win_shell: |
-          $forwarder = Get-DnsServerForwarder | Where-Object {$_.IPAddress -eq 8.8.8.8}
+          $forwarder = Get-DnsServerForwarder
           if ($forwarder) {
             Write-Output "ForwarderExists"
           } else {
@@ -43,7 +70,7 @@
   
       - name: Create DNS zones
         win_shell: >
-          Add-DnsServerPrimaryZone -NetworkId "{{ item.networkid }}" -ReplicationScope "Forest" -ZoneFile "{{ item.zonefile }}"
+          Add-DnsServerPrimaryZone -Name "{{ item.name }}" -ReplicationScope "Forest"
         loop: "{{ dns.reversezones }}"
         when: '"ZoneDoesNotExist" in dns_zone_check.stdout'
   
@@ -67,6 +94,6 @@
   
       - name: Add DNS forwarder
         win_shell: >
-          Add-DnsServerForwarder -IPAddress "{{ dns_forwarder_ip }}" -PassThru
+          Add-DnsServerForwarder -IPAddress 8.8.8.8 -PassThru
         when: '"ForwarderDoesNotExist" in dns_forwarder_check.stdout'
   
