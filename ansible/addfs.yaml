@@ -1,7 +1,7 @@
 ---
 - name: Install AD DFS
   hosts: server
-  gather_facts: true
+  gather_facts: false
   tasks:
     - name: Install AD DFS
       ansible.windows.win_feature:
@@ -11,60 +11,24 @@
         state: present
         include_management_tools: true
 
-    - name: Create top directory
+    - name: Create directories
       ansible.windows.win_file:
-        path: C:\Files
-        state: directory
-
-    - name: Create SMB dir
+        path: "{{ item.path }}"
+        state: "{{ item.state }}"
+      loop: "{{ addfs }}"
+    
+    - name: Create SMB shares
       ansible.windows.win_share:
-        name: Files
-        path: C:\Files
-        full: IT,Domain Admins
-        change: IT,Domain Admins
-        read: Everyone
-
-    - name: Create Marketing directory
-      ansible.windows.win_file:
-        path: C:\Marketing
-        state: directory
-
-    - name: Create HR directory
-      ansible.windows.win_file:
-        path: C:\HR
-        state: directory
-
-    - name: Create IT directory
-      ansible.windows.win_file:
-        path: C:\IT
-        state: directory
-
-    - name: Create SMB shares (1/3)
-      ansible.windows.win_share:
-        name: Marketing
-        path: C:\Marketing
-        full: Admins,Marketing,Domain Admins
-        change: Admins
-
-    - name: Create SMB shares (2/3)
-      ansible.windows.win_share:
-        name: HR
-        path: C:\HR
-        full: Admins,HR,Domain Admins
-        change: Admins
-
-    - name: Create SMB shares (3/3)
-      ansible.windows.win_share:
-        name: IT
-        path: C:\IT
-        full: Admins,IT,Domain Admins
-        change: Admins
+        name: "{{ item.name }}"
+        path: "{{ item.path }}"
+        full: "{{ item.full }}"
+        change: "{{ item.change }}"
+        read: "{{ item.read }}"
+      loop: "{{ addfs }}"
 
 - name: Configure AD DFS
-  hosts: server
-  gather_facts: true
-  become: true
-  become_method: runas
+  hosts: kkk-adds
+  gather_facts: false
   tasks:
     - name: Check namespace root
       ansible.windows.win_shell: '(Get-DfsnRoot | Where-Object { $_.Path -like "\\KKK.COM\Files" }) -ne $null'
@@ -79,16 +43,14 @@
 
     - name: Create namespace folders
       ansible.windows.win_shell: |
-        New-DfsnFolder -Path '\\KKK.COM\Files\Marketing' -TargetPath '\\KKK-ADDS.kkk.com\Marketing'
-        New-DfsnFolder -Path '\\KKK.COM\Files\HR' -TargetPath '\\KKK-ADDS.kkk.com\HR'
-        New-DfsnFolder -Path '\\KKK.COM\Files\IT' -TargetPath '\\KKK-ADDS.kkk.com\IT'
+        New-DfsnFolder -Path '\\KKK.COM\Files\"{{ item.name }}"' -TargetPath '\\KKK-ADDS.kkk.com\"{{ item.name }}"'
+      loop: "{{ addfs }}"
       listen: Configure DFS
 
     - name: Add folder secondary paths
       ansible.windows.win_shell: |
-        New-DfsnFolderTarget -Path '\\KKK.COM\Files\Marketing' -TargetPath '\\KKK-RODC.kkk.com\Marketing' -State Online
-        New-DfsnFolderTarget -Path '\\KKK.COM\Files\HR' -TargetPath '\\KKK-RODC.kkk.com\HR' -State Online
-        New-DfsnFolderTarget -Path '\\KKK.COM\Files\IT' -TargetPath '\\KKK-RODC.kkk.com\IT' -State Online
+        New-DfsnFolder -Path '\\KKK.COM\Files\"{{ item.name }}"' -TargetPath '\\KKK-ADDS.kkk.com\"{{ item.name }}"' -State Online
+      loop: "{{ addfs }}"
       listen: Configure DFS
 
     - name: Create replication group
@@ -101,7 +63,7 @@
 
     - name: Set replicated folder
       ansible.windows.win_shell: |
-        New-DfsReplicatedFolder -GroupName "KKK-REPLICATION" -FolderName Files,IT,Marketing,HR
+        New-DfsReplicatedFolder -GroupName "KKK-REPLICATION" -FolderName Files,it,marketing,kiado,adminisztracio,vezeto,zene,KKK
       listen: Configure DFS
 
     - name: Create replication connection
@@ -116,18 +78,18 @@
       ansible.windows.win_shell: >
         Set-DfsrMembership
         -Groupname "KKK-REPLICATION"
-        -FolderName "{{ item }}"
+        -FolderName "{{ item.name }}"
         -ComputerName "KKK-ADDS.kkk.com"
-        -ContentPath "C:\{{ item }}"
+        -ContentPath "{{ item.path }}"
         -PrimaryMember $True
         -StagingPathQuotaInMB 16384
         -Force
 
         Set-DfsrMembership
         -Groupname "KKK-REPLICATION"
-        -FolderName "{{ item }}"
+        -FolderName "{{ item.name }}"
         -ComputerName "KKK-RODC.kkk.com"
-        -ContentPath "C:\{{ item }}"
+        -ContentPath "{{ item.path }}"
         -Force
-      loop: "{{ replication.folders }}"
+      loop: "{{ addfs }}"
       listen: Configure DFS

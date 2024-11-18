@@ -1,47 +1,59 @@
 ---
-  - name: DHCP configuration
-    hosts: KKK-ADDS
-    gather_facts: false
-    tasks:
+- name: DHCP configuration
+  hosts: KKK-ADDS
+  gather_facts: false
+  tasks:
     - name: Install DHCP
-        ansible.windows.win_feature:
-          name:
-            - DHCP
-          state: present
-          include_management_tools: true
-        notify: Configure DHCP
-  
-    handlers:
-      - name: Authorize DHCP server to domain
-        ansible.windows.win_shell: >
-          Add-DhcpServerInDC -DnsName KKK-ADDS.kkk.com -IPAddress 10.11.113.10
-        listen: Configure DHCP
-  
-      - name: Notify server manager that Post-install is done
-        ansible.windows.win_shell: >
-          Set-ItemProperty –Path registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\ServerManager\Roles\12 –Name ConfigurationState –Value 2
-        listen: Configure DHCP
-      
-      - name: Register clients to DNS server
-        ansible.windows.win_shell: >
-          $Credential = New-Object System.Management.Automation.PSCredential("KKK\Administrator", (ConvertTo-SecureString "Passw0rd" -AsPlainText -Force))
-          Set-DhcpServerDnsCredential -Credential $Credential -ComputerName "KKK-ADDS.kkk.com"
-        listen: Configure DHCP
+      ansible.windows.win_feature:
+        name:
+          - DHCP
+        state: present
+        include_management_tools: true
+      notify: Configure DHCP
+
+  handlers:
+    - name: Authorize DHCP server to domain
+      ansible.windows.win_shell: >
+        Add-DhcpServerInDC -DnsName KKK-ADDS.kkk.com -IPAddress 10.11.113.10
+      listen: Configure DHCP
+
+    - name: Notify server manager that Post-install is done
+      ansible.windows.win_shell: >
+        Set-ItemProperty –Path registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\ServerManager\Roles\12 –Name ConfigurationState –Value 2
+      listen: Configure DHCP
     
-      - name: Configure scopes
-        ansible.windows.win_shell: >
-          Add-DhcpServerv4Scope -name "{{ item.name }}" -StartRange "{{ item.start }}" -EndRange "{{ item.end }}" -SubnetMask "{{ item.netmask }}" -State Active
-        loop: {{ dhcp.scope }}
-        listen: Configure DHCP
-      
-      - name: Edit scope options
-        ansible.windows.win_shell: >
-          Set-DhcpServerv4OptionValue `
-            -ScopeId "{{ item.scopeid }}" `
-            -ComputerName "KKK-ADDS.kkk.com" `
-            -DnsServer "{{ item.dns }}" `
-            -WinsServer "{{ item.wins }}" `
-            -DnsDomain "kkk.com" `
-            -Router "{{ item.gateway }}"
-        loop: {{ dhcp.scope }}
-        listen: Configure DHCP
+    - name: Register clients to DNS server
+      ansible.windows.win_shell: >
+        $Credential = New-Object System.Management.Automation.PSCredential("KKK\Administrator", (ConvertTo-SecureString "Passw0rd" -AsPlainText -Force))
+        Set-DhcpServerDnsCredential -Credential $Credential -ComputerName "KKK-ADDS.kkk.com"
+      listen: Configure DHCP
+  
+    - name: Configure IPv4 scopes
+      ansible.windows.win_shell: >
+        Add-DhcpServerv4Scope -name "{{ item.name }}" -StartRange "{{ item.start }}" -EndRange "{{ item.end }}" -SubnetMask "{{ item.netmask }}" -State Active
+      loop: "{{ dhcp.scopev4 }}"
+      listen: Configure DHCP
+    
+    - name: Edit scope options
+      ansible.windows.win_shell: >
+        Set-DhcpServerv4OptionValue `
+          -ScopeId "{{ item.scopeid }}" `
+          -ComputerName "KKK-ADDS.kkk.com" `
+          -DnsServer "{{ item.dns }}" `
+          -WinsServer "{{ item.wins }}" `
+          -DnsDomain "kkk.com" `
+          -Router "{{ item.gateway }}"
+      loop: "{{ dhcp.scopev4 }}"
+      listen: Configure DHCP
+    
+    - name: Configure IPv6 scopes
+      ansible.windows.win_shell: >
+        Add-DhcpServerv6Scope -Prefix "{{ item.name }}" -Name "{{ item.prefix }}"
+      loop: "{{ dhcp.scopev6 }}"
+      listen: Configure DHCP
+    
+    - name: Add exclusion range for IPv6
+      ansible.windows.win_shell: >
+        Add-DhcpServerv6ExclusionRange -Prefix "{{ item.prefix }}" -StartRange "{{ item.exstart }}" -EndRange "{{ item.exend }}"
+      loop: "{{ dhcp.scopev6 }}"
+      listen: Configure DHCP

@@ -1,99 +1,100 @@
 ---
-  - name: Add KKK-RODC address to KKK-ADDS dns servers
-    hosts: KKK-ADDS
-    gather_facts: false
-    vars:
-      ansible_user: Administrator
-      ansible_become_user: Administrator
-      desired_dns_servers:
-        - 10.11.113.10
-        - "2001:db8:c1c1:abfa::10"
-        - 10.11.113.11
-        - "2001:db8:c1c1:abfa::11"
-    tasks:
-    - name: Check current DNS server addresses
+- name: Add KKK-RODC address to KKK-ADDS dns servers
+  hosts: KKK-ADDS
+  gather_facts: false
+  vars:
+    ansible_user: Administrator
+    ansible_become_user: Administrator
+    desired_dns_servers:
+      - 10.11.113.10
+      - "2001:db8:c1c1:abfa::10"
+      - 10.11.113.11
+      - "2001:db8:c1c1:abfa::11"
+  tasks:
+  - name: Check current DNS server addresses
+    win_shell: |
+      $adapter = Get-DnsClientServerAddress | Where-Object { $_.InterfaceAlias -eq 'Ethernet0' }
+      $dnsAddresses = $adapter.ServerAddresses
+      $dnsAddresses | Sort-Object | ForEach-Object { $_.Trim() }
+    register: current_dns
+    changed_when: false
+
+  - name: Set DNS server addresses
+    win_dns_client:
+      adapter_names: 'Ethernet0'
+      dns_servers: "{{ desired_dns_servers }}"
+    when: "'10.11.113.11' not in current_dns.stdout_lines and '2001:db8:c1c1:abfa::11' not in current_dns.stdout_lines"
+    changed_when: true
+
+- name: DNS zone and record creation
+  hosts: KKK-ADDS
+  gather_facts: false
+  tasks:
+    - name: Check if DNS zone exists
       win_shell: |
-        $adapter = Get-DnsClientServerAddress | Where-Object { $_.InterfaceAlias -eq 'Ethernet0' }
-        $dnsAddresses = $adapter.ServerAddresses
-        $dnsAddresses | Sort-Object | ForEach-Object { $_.Trim() }
-      register: current_dns
+        if (Get-DnsServerZone -Name 113.11.10.in-addr.arpa -ErrorAction SilentlyContinue) {
+          Write-Output "ZoneExists"
+        } else {
+          Write-Output "ZoneDoesNotExist"
+        }
+      register: dns_zone_check
       changed_when: false
-  
-    - name: Set DNS server addresses
-      win_dns_client:
-        adapter_names: 'Ethernet0'
-        dns_servers: "{{ desired_dns_servers }}"
-      when: "'10.11.113.11' not in current_dns.stdout_lines and '2001:db8:c1c1:abfa::11' not in current_dns.stdout_lines"
-      changed_when: true
-  
-  - name: DNS zone and record creation
-    hosts: KKK-ADDS
-    gather_facts: false
-    tasks:
-      - name: Check if DNS zone exists
-        win_shell: |
-          if (Get-DnsServerZone -Name 113.11.10.in-addr.arpa -ErrorAction SilentlyContinue) {
-            Write-Output "ZoneExists"
-          } else {
-            Write-Output "ZoneDoesNotExist"
-          }
-        register: dns_zone_check
-        changed_when: false
-  
-      - name: Check if DNS A record exists
-        win_shell: "nslookup 10.11.113.5"
-        register: nslookup_check
-        changed_when: false
-  
-      - name: Check if DNS AAAA record exists
-        win_shell: |
-          nslookup 2001:db8:c1c1:abfa::5
-        register: nslookup_aaaa_check
-        changed_when: false
-  
-      - name: Check if CNAME record exists
-        win_shell: |
-          nslookup -type=CNAME mail.kkk.com
-        register: nslookup_cname_check
-        changed_when: false
-  
-      - name: Check if DNS forwarder exists
-        win_shell: |
-          $forwarder = Get-DnsServerForwarder
-          if ($forwarder) {
-            Write-Output "ForwarderExists"
-          } else {
-            Write-Output "ForwarderDoesNotExist"
-          }
-        register: dns_forwarder_check
-        changed_when: false
-  
-      - name: Create DNS zones
-        win_shell: >
-          Add-DnsServerPrimaryZone -Name "{{ item.name }}" -ReplicationScope "Forest"
-        loop: "{{ dns.reversezones }}"
-        when: '"ZoneDoesNotExist" in dns_zone_check.stdout'
-  
-      - name: Create A records
-        win_shell: >
-          Add-DnsServerResourceRecordA -ZoneName "{{item.zonename}}" -Name "{{ item.name }}" -IPv4Address "{{ item.value }}" -CreatePtr
-        loop: "{{ dns.a_records }}"
-        when: "'kkk-lin.kkk.com' not in nslookup_check.stdout"
-  
-      - name: Create AAAA records
-        win_shell: >
-          Add-DnsServerResourceRecordAAAA -ZoneName "{{item.zonename}}" -Name "{{ item.name }}" -IPv6Address "{{ item.value }}" -CreatePtr
-        loop: "{{ dns.aaaa_records }}"
-        when: "'kkk-lin.kkk.com' not in nslookup_aaaa_check.stdout"
-  
-      - name: Create CNAME records
-        win_shell: >
-          Add-DnsServerResourceRecordCNAME -ZoneName "{{item.zonename}}" -Name "{{ item.name }}" -HostNameAlias "{{ item.value }}"
-        loop: "{{ dns.cname_records }}"
-        when: "'kkk-lin.kkk.com' not in nslookup_cname_check.stdout"
-  
-      - name: Add DNS forwarder
-        win_shell: >
-          Add-DnsServerForwarder -IPAddress 8.8.8.8 -PassThru
-        when: '"ForwarderDoesNotExist" in dns_forwarder_check.stdout'
-  
+
+    - name: Check if DNS A record exists
+      win_shell: "nslookup 10.11.113.5"
+      register: nslookup_check
+      changed_when: false
+
+    - name: Check if DNS AAAA record exists
+      win_shell: |
+        nslookup 2001:db8:c1c1:abfa::5
+      register: nslookup_aaaa_check
+      changed_when: false
+
+    - name: Check if CNAME record exists
+      win_shell: |
+        nslookup -type=CNAME mail.kkk.com
+      register: nslookup_cname_check
+      changed_when: false
+
+    - name: Check if DNS forwarder exists
+      win_shell: |
+        $forwarder = Get-DnsServerForwarder
+        if ($forwarder) {
+          Write-Output "ForwarderExists"
+        } else {
+          Write-Output "ForwarderDoesNotExist"
+        }
+      register: dns_forwarder_check
+      changed_when: false
+
+
+    - name: Create DNS zones
+      win_shell: >
+        Add-DnsServerPrimaryZone -Name "{{ item.name }}" -ReplicationScope "Forest"
+      loop: "{{ dns.reversezones }}"
+      when: '"ZoneDoesNotExist" in dns_zone_check.stdout'
+
+    # Missing: Create Stub Zone linking.
+    - name: Create A records
+      win_shell: >
+        Add-DnsServerResourceRecordA -ZoneName "{{item.zonename}}" -Name "{{ item.name }}" -IPv4Address "{{ item.value }}" -CreatePtr
+      loop: "{{ dns.a_records }}"
+      when: "'kkk-lin.kkk.com' not in nslookup_check.stdout"
+
+    - name: Create AAAA records
+      win_shell: >
+        Add-DnsServerResourceRecordAAAA -ZoneName "{{item.zonename}}" -Name "{{ item.name }}" -IPv6Address "{{ item.value }}" -CreatePtr
+      loop: "{{ dns.aaaa_records }}"
+      when: "'kkk-lin.kkk.com' not in nslookup_aaaa_check.stdout"
+
+    - name: Create CNAME records
+      win_shell: >
+        Add-DnsServerResourceRecordCNAME -ZoneName "{{item.zonename}}" -Name "{{ item.name }}" -HostNameAlias "{{ item.value }}"
+      loop: "{{ dns.cname_records }}"
+      when: "'kkk-lin.kkk.com' not in nslookup_cname_check.stdout"
+
+    - name: Add DNS forwarder
+      win_shell: >
+        Add-DnsServerForwarder -IPAddress 8.8.8.8 -PassThru
+      when: '"ForwarderDoesNotExist" in dns_forwarder_check.stdout'

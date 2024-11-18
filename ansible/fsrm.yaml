@@ -1,6 +1,6 @@
 ---
     - name: Install FSRM
-      hosts: dist
+      hosts: server
       gather_facts: true
       tasks:
         - name: Install FSRM

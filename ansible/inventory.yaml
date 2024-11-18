@@ -20,72 +20,164 @@ all:
       - GigabitEthernet0/4
       - GigabitEthernet0/5
       - GigabitEthernet0/6
+    
+    addfs:
+      - name: Files
+        path: C:\Files
+        state: directory
+        full: IT,Domain Admins
+        change: IT,Domain Admins
+        read: Everyone
 
+      - name: Adminisztracio
+        path: C:\Adminisztracio
+        state: directory
+        full: IT,Domain Admins
+        change: IT,Domain Admins,Adminisztracio
+        read: Adminisztracio
+      
+      - name: It
+        path: C:\It
+        state: directory
+        full: IT,Domain Admins
+        change: IT,Domain Admins
+        read: IT
+      
+      - name: Kiado
+        path: C:\Kiado
+        state: directory
+        full: IT,Domain Admins
+        change: IT,Domain Admins,Kiado
+        read: Kiado
+      
+      - name: Marketing
+        path: C:\Marketing
+        state: directory
+        full: IT,Domain Admins
+        change: IT,Domain Admins,Marketing
+        read: Marketing
+      
+      - name: Vezeto
+        path: C:\Vezeto
+        state: directory
+        full: IT,Domain Admins
+        change: IT,Domain Admins,Vezeto
+        read: Vezeto
+      
+      - name: Zene
+        path: C:\Zene
+        state: directory
+        full: IT,Domain Admins
+        change: IT,Domain Admins,Zene
+        read: Zene
+      
+      - name: KKK
+        path: C:\KKK
+        state: directory
+        full: IT,Domain Admins
+        change: IT,Domain Admins
+        read: Everyone
 
     dhcp:
-      scope:
+      scopev4:
         - name: "ADMINISZTRACIO"
-          start: "10.11.47.X" 
-          end: "10.11.47.X"
+          start: "10.11.47.2" 
+          end: "10.11.47.28"
           netmask: "255.255.255.224"
           scopeid: "10.11.47.0"
           dns: "10.11.113.10"
           wins: "10.11.113.10"
-          gateway: "10.11.47.X"
+          gateway: "10.11.47.1"
         
         - name: "MARKETING"
-          start: "10.11.73.X" 
-          end: "10.11.73.X"
+          start: "10.11.73.2" 
+          end: "10.11.73.60"
           netmask: "255.255.255.192"
           scopeid: "10.11.73.0"
           dns: "10.11.113.10"
           wins: "10.11.113.10"
-          gateway: "10.11.73.X"
+          gateway: "10.11.73.1"
         
         - name: "VEZETO"
-          start: "10.11.71.X" 
-          end: "10.11.71.X"
+          start: "10.11.71.2" 
+          end: "10.11.71.12"
           netmask: "255.255.255.240"
           scopeid: "10.11.71.0"
           dns: "10.11.113.10"
           wins: "10.11.113.10"
-          gateway: "10.11.71.X"
+          gateway: "10.11.71.1"
         
         - name: "KIADO"
-          start: "10.11.97.X" 
-          end: "10.11.97.X"
+          start: "10.11.97.2" 
+          end: "10.11.97.28"
           netmask: "255.255.255.224"
           scopeid: "10.11.97.0"
           dns: "10.11.113.10"
           wins: "10.11.113.10"
-          gateway: "10.11.97.X"
+          gateway: "10.11.97.1"
         
         - name: "ZENE"
-          start: "10.11.19.X" 
-          end: "10.11.19.X"
+          start: "10.11.19.2" 
+          end: "10.11.19.60"
           netmask: "255.255.255.192"
           scopeid: "10.11.19.0"
           dns: "10.11.113.10"
           wins: "10.11.113.10"
-          gateway: "10.11.19.X"
+          gateway: "10.11.19.1"
         
         - name: "WIFI"
-          start: "10.11.140.X" 
-          end: "10.11.140.X"
+          start: "10.11.140.2" 
+          end: "10.11.143.250"
           netmask: "255.255.252.0"
           scopeid: "10.11.140.0"
           dns: "10.11.113.10"
           wins: "10.11.113.10"
-          gateway: "10.11.140.X"
+          gateway: "10.11.140.1"
         
         - name: "IT"
-          start: "10.11.169.X" 
-          end: "10.11.169.X"
+          start: "10.11.169.2" 
+          end: "10.11.169.12"
           netmask: "255.255.255.240"
           scopeid: "10.11.169.0"
           dns: "10.11.113.10"
           wins: "10.11.113.10"
-          gateway: "10.11.169.X"
+          gateway: "10.11.169.1"
+      
+      scopev6:
+        - name: "ADMINISZTRACIO"
+          exstart: "2001:db8:c1c1:abb1:1::" 
+          exend: "2001:db8:c1c1:abb1:ffff:ffff:ffff:ffff"
+          prefix: "2001:db8:c1c1:abb1::"
+        
+        - name: "MARKETING"
+          exstart: "2001:db8:c1c1:abf8:1::" 
+          exend: "2001:db8:c1c1:abf8:ffff:ffff:ffff:ffff"
+          prefix: "2001:db8:c1c1:abf8::"
+        
+        - name: "VEZETO"
+          exstart: "2001:db8:c1c1:abba:1::" 
+          exend: "2001:db8:c1c1:abba:ffff:ffff:ffff:ffff"
+          prefix: "2001:db8:c1c1:abba::"
+        
+        - name: "KIADO"
+          exstart: "2001:db8:c1c1:abf6:1::" 
+          exend: "2001:db8:c1c1:abf6:ffff:ffff:ffff:ffff"
+          prefix: "2001:db8:c1c1:abf6::"
+        
+        - name: "ZENE"
+          exstart: "2001:db8:c1c1:ab8d:1::" 
+          exend: "2001:db8:c1c1:ab8d:ffff:ffff:ffff:ffff"
+          prefix: "2001:db8:c1c1:ab8d::"
+        
+        - name: "WIFI"
+          exstart: "2001:db8:c1c1:abda:1::" 
+          exend: "2001:db8:c1c1:abda:ffff:ffff:ffff:ffff"
+          prefix: "2001:db8:c1c1:abda::"
+        
+        - name: "IT"
+          exstart: "2001:db8:c1c1:abb5:1::" 
+          exend: "2001:db8:c1c1:abb5:ffff:ffff:ffff:ffff"
+          prefix: "2001:db8:c1c1:abb5::"
     
     dns:
       reversezones:
@@ -103,6 +195,32 @@ all:
 
 
       a_records:
+        - name: "kkk-lin"
+          value: "10.11.113.5"
+          zonename: "kkk.com"
+
+        - name: "kkk-proxy"
+          value: "10.11.199.5"
+          zonename: "kkk.com"
+
+        - name: "kkk-backup"
+          value: "10.11.113.12"
+          zonename: "kkk.com"
+      
+      reverse_a_records:
+        - name: "kkk-adds"
+          value: "10.11.113.5"
+          zonename: "kkk.com"
+
+        - name: "kkk-proxy"
+          value: "10.11.199.5"
+          zonename: "kkk.com"
+
+        - name: "kkk-backup"
+          value: "10.11.113.12"
+          zonename: "kkk.com"
+      
+      reverse_aaaa_records:
         - name: "kkk-lin"
           value: "10.11.113.5"
           zonename: "kkk.com"
@@ -160,19 +278,3 @@ mainhq:
         KKK-RODC:
           ansible_host: 10.11.113.11
           hostname: KKK-RODC
-
-    l2switch:
-      hosts:
-        kkk_main_l2_sw1:
-          ansible_host: 10.11.137.5
-
-        kkk_main_l2_sw2:
-          ansible_host: 10.11.137.6
-
-    l3switch:
-      hosts:
-        kkk_main_l3_sw1:
-          ansible_host: 10.11.137.1
-
-        kkk_main_l3_sw2:
-          ansible_host: 10.11.137.2
