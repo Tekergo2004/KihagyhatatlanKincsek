@@ -9,73 +9,62 @@ all:
     ansible_become_method: runas
     ansible_become_user: KKK\Administrator
     ansible_become_password: Password123
-
-    cisco-username: ssh
-    cisco-password: Password
-
-    port-sec:
-      - GigabitEthernet0/1
-      - GigabitEthernet0/2
-      - GigabitEthernet0/3
-      - GigabitEthernet0/4
-      - GigabitEthernet0/5
-      - GigabitEthernet0/6
     
     addfs:
       - name: Files
         path: C:\Files
         state: directory
-        full: IT,Domain Admins
-        change: IT,Domain Admins
+        full: IT
+        change: IT
         read: Everyone
 
       - name: Adminisztracio
         path: C:\Adminisztracio
         state: directory
-        full: IT,Domain Admins
-        change: IT,Domain Admins,Adminisztracio
-        read: Adminisztracio
+        full: IT
+        change: Adminisztracio
+        read: Vezeto
       
       - name: It
         path: C:\It
         state: directory
-        full: IT,Domain Admins
-        change: IT,Domain Admins
-        read: IT
+        full: IT
+        change: IT
+        read: Vezeto
       
       - name: Kiado
         path: C:\Kiado
         state: directory
-        full: IT,Domain Admins
-        change: IT,Domain Admins,Kiado
-        read: Kiado
+        full: IT
+        change: Kiado
+        read: Vezeto
       
       - name: Marketing
         path: C:\Marketing
         state: directory
-        full: IT,Domain Admins
-        change: IT,Domain Admins,Marketing
-        read: Marketing
+        full: IT
+        change: Marketing
+        read: Vezeto
       
       - name: Vezeto
         path: C:\Vezeto
         state: directory
-        full: IT,Domain Admins
-        change: IT,Domain Admins,Vezeto
+        full: IT
+        change: Vezeto
         read: Vezeto
       
       - name: Zene
         path: C:\Zene
         state: directory
-        full: IT,Domain Admins
-        change: IT,Domain Admins,Zene
-        read: Zene
+        full: IT
+        change: Zene
+        read: Vezeto
       
       - name: KKK
         path: C:\KKK
         state: directory
-        full: IT,Domain Admins
-        change: IT,Domain Admins
+        full: IT
+        change: IT
         read: Everyone
 
     dhcp:

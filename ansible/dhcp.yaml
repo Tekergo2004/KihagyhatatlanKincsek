@@ -3,57 +3,85 @@
   hosts: KKK-ADDS
   gather_facts: false
   tasks:
-    - name: Install DHCP
+    - name: Install DHCP feature and management tools
       ansible.windows.win_feature:
-        name:
-          - DHCP
+        name: DHCP, RSAT-DHCP
         state: present
         include_management_tools: true
-      notify: Configure DHCP
+      register: dhcp_feature_result
 
-  handlers:
+    - name: Reboot the server if needed
+      ansible.windows.win_reboot:
+      when: dhcp_feature_result.reboot_required
+
+    - name: Check if DHCP module is available
+      ansible.windows.win_shell: |
+        if (Get-Module -ListAvailable -Name DhcpServer) {
+          Write-Output "Module Found"
+        } else {
+          Write-Output "Module Not Found"
+        }
+      register: module_check
+      changed_when: false
+
     - name: Authorize DHCP server to domain
-      ansible.windows.win_shell: >
-        Add-DhcpServerInDC -DnsName KKK-ADDS.kkk.com -IPAddress 10.11.113.10
-      listen: Configure DHCP
+      ansible.windows.win_shell: |
+        if (!(Get-DhcpServerInDC | Where-Object { $_.DnsName -eq "KKK-ADDS.kkk.com" })) {
+          Add-DhcpServerInDC -DnsName "KKK-ADDS.kkk.com" -IPAddress "10.11.113.10"
+        }
+      changed_when: false
+
 
     - name: Notify server manager that Post-install is done
-      ansible.windows.win_shell: >
-        Set-ItemProperty –Path registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\ServerManager\Roles\12 –Name ConfigurationState –Value 2
-      listen: Configure DHCP
-    
+      ansible.windows.win_shell: |
+        $currentState = (Get-ItemProperty -Path registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\ServerManager\Roles\12 -Name ConfigurationState).ConfigurationState
+        if ($currentState -ne 2) {
+          Set-ItemProperty -Path registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\ServerManager\Roles\12 -Name ConfigurationState -Value 2
+        }
+      when: dhcp_feature_result.changed or not dhcp_feature_result.changed
+      changed_when: false
+
     - name: Register clients to DNS server
-      ansible.windows.win_shell: >
-        $Credential = New-Object System.Management.Automation.PSCredential("KKK\Administrator", (ConvertTo-SecureString "Passw0rd" -AsPlainText -Force))
-        Set-DhcpServerDnsCredential -Credential $Credential -ComputerName "KKK-ADDS.kkk.com"
-      listen: Configure DHCP
-  
+      ansible.windows.win_shell: |
+        $credential = New-Object System.Management.Automation.PSCredential("KKK\Administrator", (ConvertTo-SecureString "Passw0rd" -AsPlainText -Force))
+        $existingCredential = Get-DhcpServerDnsCredential -ErrorAction SilentlyContinue
+        if (!$existingCredential) {
+          Set-DhcpServerDnsCredential -Credential $credential -ComputerName "KKK-ADDS.kkk.com"
+        }
+      when: dhcp_feature_result.changed or not dhcp_feature_result.changed
+      changed_when: false
+
     - name: Configure IPv4 scopes
-      ansible.windows.win_shell: >
-        Add-DhcpServerv4Scope -name "{{ item.name }}" -StartRange "{{ item.start }}" -EndRange "{{ item.end }}" -SubnetMask "{{ item.netmask }}" -State Active
-      loop: "{{ dhcp.scopev4 }}"
-      listen: Configure DHCP
-    
-    - name: Edit scope options
-      ansible.windows.win_shell: >
-        Set-DhcpServerv4OptionValue `
+      win_shell: |
+        $scope = Get-DhcpServerv4Scope -ScopeId "{{ item.scopeid }}" -ErrorAction SilentlyContinue
+        if (-not $scope) {
+          Add-DhcpServerv4Scope -Name "{{ item.name }}" -StartRange "{{ item.start }}" -EndRange "{{ item.end }}" -SubnetMask "{{ item.netmask }}" -State Active
+          Set-DhcpServerv4OptionValue `
           -ScopeId "{{ item.scopeid }}" `
           -ComputerName "KKK-ADDS.kkk.com" `
           -DnsServer "{{ item.dns }}" `
           -WinsServer "{{ item.wins }}" `
           -DnsDomain "kkk.com" `
           -Router "{{ item.gateway }}"
+        } else {
+          Write-Host "Scope {{ item.scopeid }} already exists, skipping creation."
+        }
       loop: "{{ dhcp.scopev4 }}"
-      listen: Configure DHCP
-    
+      loop_control:
+        label: "{{ item.name }}"
+      changed_when: false
+
     - name: Configure IPv6 scopes
-      ansible.windows.win_shell: >
-        Add-DhcpServerv6Scope -Prefix "{{ item.name }}" -Name "{{ item.prefix }}"
+      ansible.windows.win_shell: |
+        $prefix = "{{ item.prefix }}"
+        $exstart = "{{ item.exstart }}"
+        $exend = "{{ item.exend }}"
+        if (!(Get-DhcpServerv6Scope -Prefix "{{ item.prefix }}" -ErrorAction SilentlyContinue)) {
+          Add-DhcpServerv6Scope -Prefix "{{ item.prefix }}" -Name "{{ item.name }}"
+          Add-DhcpServerv6ExclusionRange -Prefix $prefix -StartRange $exstart -EndRange $exend
+        }
       loop: "{{ dhcp.scopev6 }}"
-      listen: Configure DHCP
-    
-    - name: Add exclusion range for IPv6
-      ansible.windows.win_shell: >
-        Add-DhcpServerv6ExclusionRange -Prefix "{{ item.prefix }}" -StartRange "{{ item.exstart }}" -EndRange "{{ item.exend }}"
-      loop: "{{ dhcp.scopev6 }}"
-      listen: Configure DHCP
+      loop_control:
+        label: "{{ item.name }}"
+      when: dhcp_feature_result.changed or not dhcp_feature_result.changed
+      changed_when: false
