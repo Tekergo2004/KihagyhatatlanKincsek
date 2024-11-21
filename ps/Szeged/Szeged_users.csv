@@ -1,0 +1,10 @@
+Name,Group,Title,Path
+Kovács János,Esemeny,Eseményszervező,"OU=Esemeny,OU=Alkalmazott,DC=szeged,DC=kkk,DC=com"
+Szabó László,Esemeny,Logisztikai Szakember,"OU=Esemeny,OU=Alkalmazott,DC=szeged,DC=kkk,DC=com"
+Nagy Zoltán,Esemeny,Színpadi Technikus,"OU=Esemeny,OU=Alkalmazott,DC=szeged,DC=kkk,DC=com"
+Molnár Réka,Esemeny,Marketing és Reklám Szakember,"OU=Esemeny,OU=Alkalmazott,DC=szeged,DC=kkk,DC=com"
+Pintér Gábor,Kozonseg,Közönségkapcsolati Menedzser,"OU=Kozonseg,OU=Alkalmazott,DC=szeged,DC=kkk,DC=com"
+Bíró Zsófia,Kozonseg,Hírlevél Szerkesztő,"OU=Kozonseg,OU=Alkalmazott,DC=szeged,DC=kkk,DC=com"
+Varga Gábor,Kozonseg,Visszajelzés-elemző,"OU=Kozonseg,OU=Alkalmazott,DC=szeged,DC=kkk,DC=com"
+Szabó István,Fiokvezeto,Fiókvezető,"OU=Fiokvezeto,OU=Vezeto,DC=szeged,DC=kkk,DC=com"
+Kovács Gábor,IT,IT szakember,"OU=IT,OU=IT,DC=szeged,DC=kkk,DC=com"
