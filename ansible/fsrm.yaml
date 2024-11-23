@@ -1,69 +1,47 @@
----
+- name: Install and configure FSRM
+  hosts: server
+  gather_facts: false
+  tasks:
     - name: Install FSRM
-      hosts: server
-      gather_facts: true
-      tasks:
-        - name: Install FSRM
-          ansible.windows.win_feature:
-            name:
-              - FS-Resource-Manager
-            state: present
-            include_management_tools: true
-          notify: Configure FSRM
-    
-      handlers:
-        - name: Create quotas
-          ansible.windows.win_shell: >
-            New-FsrmQuota
-            -Path "C:\Marketing"
-            -Description "limit usage to 20 GB."
-            -Size 20GB
-    
-            New-FsrmQuota
-            -Path "C:\HR"
-            -Description "limit usage to 20 GB."
-            -Size 20GB
-    
-            New-FsrmQuota
-            -Path "C:\IT"
-            -Description "limit usage to 100 GB."
-            -Size 100GB
-          listen: Configure FSRM
-    
-        - name: Create file screen groups
-          ansible.windows.win_shell: >
-            New-FsrmFileGroup
-            -Name "G-Marketing"
-            -IncludePattern "*.*"
-            -ExcludePattern @("*.doc", "*.docx", "*.xls", "*.xlsx", "*.xml", "*.pdf", "*.txt")
-    
-            New-FsrmFileGroup
-            -Name "G-HR"
-            -IncludePattern "*.*"
-            -ExcludePattern @("*.doc", "*.docx", "*.jpg", "*.pdf", "*.txt")
-    
-            New-FsrmFileGroup
-            -Name "G-IT"
-            -IncludePattern "*.exe"
-          listen: Configure FSRM
-    
-        - name: Create file screens
-          ansible.windows.win_shell: >
-            New-FsrmFileScreen
-            -Path "C:\Marketing"
-            -Description "Marketing"
-            -IncludeGroup "G-Marketing"
-            -Active
-    
-            New-FsrmFileScreen
-            -Path "C:\HR"
-            -Description "HR"
-            -IncludeGroup "G-HR"
-            -Active
-    
-            New-FsrmFileScreen
-            -Path "C:\IT"
-            -Description "IT"
-            -IncludeGroup "G-IT"
-            -Active
-          listen: Configure FSRM
+      ansible.windows.win_feature:
+        name: FS-Resource-Manager
+        state: present
+        include_management_tools: true
+      notify:
+        - Create FSRM quotas
+        - Create file screen groups
+        - Create file screens
+
+  handlers:
+    - name: Create FSRM quotas
+      ansible.windows.win_powershell:
+        script: |
+          New-FsrmQuota -Path "C:\Adminisztracio" -Description "Limit usage to 50 GB." -Size 50GB
+          New-FsrmQuota -Path "C:\It" -Description "Limit usage to 100 GB." -Size 100GB
+          New-FsrmQuota -Path "C:\Kiado" -Description "Limit usage to 50 GB." -Size 50GB
+          New-FsrmQuota -Path "C:\Marketing" -Description "Limit usage to 80 GB." -Size 80GB
+          New-FsrmQuota -Path "C:\Vezeto" -Description "Limit usage to 20 GB." -Size 20GB
+          New-FsrmQuota -Path "C:\Zene" -Description "Limit usage to 300 GB." -Size 300GB
+          New-FsrmQuota -Path "C:\KKK" -Description "Limit usage to 50 GB." -Size 50GB
+
+    - name: Create file screen groups
+      ansible.windows.win_powershell:
+        script: |
+          New-FsrmFileGroup -Name "G-Adminisztracio" -IncludePattern "*.*" -ExcludePattern @("*.doc", "*.docx", "*.xls", "*.xlsx", "*.csv", "*.pdf", "*.txt", "*.ppt", "*.pptx", "*.jpg", "*.jpeg")
+          New-FsrmFileGroup -Name "G-It" -IncludePattern "*.exe"
+          New-FsrmFileGroup -Name "G-Kiado" -IncludePattern "*.*" -ExcludePattern @("*.doc", "*.docx", "*.jpg", "*.pdf", "*.txt", "*.ppt", "*.pptx", "*.mp3", "*.wav", "*.mp4", "*.avi", "*.xcf", "*.psd")
+          New-FsrmFileGroup -Name "G-Marketing" -IncludePattern "*.*" -ExcludePattern @("*.doc", "*.docx", "*.jpg", "*.webp", "*.jfif", "*.png", "*.pdf", "*.txt", "*.ppt", "*.pptx", "*.mp4", "*.avi", "*.xcf", "*.psd", "*.html", "*.css", "*.htm", "*.php", "*.js", "*.ts")
+          New-FsrmFileGroup -Name "G-Vezeto" -IncludePattern "*.*" -ExcludePattern @("*.doc", "*.docx", "*.xls", "*.xlsx", "*.csv", "*.pdf", "*.txt", "*.ppt", "*.pptx", "*.jpg", "*.jpeg")
+          New-FsrmFileGroup -Name "G-Zene" -IncludePattern @("*.mp3", "*.wav", "*.flac", "*.aac", "*.ogg", "*.mid", "*.als", "*.ptf", "*.ptx", "*.docx", "*.pptx")
+          New-FsrmFileGroup -Name "G-KKK" -IncludePattern "*.*" -ExcludePattern @("*.docx", "*.pptx", "*.pdf", "*.txt", "*.xlsx")
+
+    - name: Create file screens
+      ansible.windows.win_powershell:
+        script: |
+          New-FsrmFileScreen -Path "C:\Marketing" -Description "Marketing" -IncludeGroup "G-Marketing" -Active
+          New-FsrmFileScreen -Path "C:\Adminisztracio" -Description "Adminisztracio" -IncludeGroup "G-Adminisztracio" -Active
+          New-FsrmFileScreen -Path "C:\It" -Description "It" -IncludeGroup "G-It" -Active
+          New-FsrmFileScreen -Path "C:\Kiado" -Description "Kiado" -IncludeGroup "G-Kiado" -Active
+          New-FsrmFileScreen -Path "C:\Vezeto" -Description "Vezeto" -IncludeGroup "G-Vezeto" -Active
+          New-FsrmFileScreen -Path "C:\Zene" -Description "Zene" -IncludeGroup "G-Zene" -Active
+          New-FsrmFileScreen -Path "C:\KKK" -Description "KKK" -IncludeGroup "G-KKK" -Active

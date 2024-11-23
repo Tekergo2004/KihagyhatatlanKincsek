@@ -75,27 +75,6 @@
     win_reboot:
     when: domain.reboot_required
 
-
-
-- name: Join KKK-RODC to domain
-  hosts: KKK-RODC
-  gather_facts: false
-  vars:
-    ansible_user: Administrator
-    ansible_become_user: Administrator
-  tasks:
-  - name: Joining domain
-    microsoft.ad.membership:
-      domain_admin_user: KKK\Administrator
-      domain_admin_password: Password123
-      state: domain
-      dns_domain_name: kkk.com
-    register: domain
-  
-  - name: Reboot
-    win_reboot:
-    when: domain.reboot_required
-
 - name: Promoting KKK-RODC to RODC
   hosts: KKK-RODC
   vars:

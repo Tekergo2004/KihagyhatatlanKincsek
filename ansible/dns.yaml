@@ -75,7 +75,6 @@
       loop: "{{ dns.reversezones }}"
       when: '"ZoneDoesNotExist" in dns_zone_check.stdout'
 
-    # Missing: Create Stub Zone linking.
     - name: Create A records
       win_shell: >
         Add-DnsServerResourceRecordA -ZoneName "{{item.zonename}}" -Name "{{ item.name }}" -IPv4Address "{{ item.value }}" -CreatePtr
