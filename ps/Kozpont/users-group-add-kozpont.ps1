@@ -2,7 +2,7 @@
 $passw = "Password123" | ConvertTo-SecureString -AsPlainText -Force
 
 # Path to the CSV file containing user information
-$csvFile = "C:\Path\To\Users.csv"
+$csvFile = ".\Users.csv"
 
 # Function to remove Hungarian accents and convert to ASCII
 function Remove-HungarianAccents {
