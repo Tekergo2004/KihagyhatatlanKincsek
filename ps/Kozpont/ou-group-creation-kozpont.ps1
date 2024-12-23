@@ -1,7 +1,7 @@
 ﻿# Domain változók
 $domain = "kkk.com"
-$ouk = @(@("Vezeto", "DC=kkk,DC=com"), @("IT", "DC=kkk,DC=com"), @("Alkalmazott", "DC=kkk,DC=com"), @("Vezeto", "OU=Vezeto,DC=kkk,DC=com"), @("IT", "OU=IT,DC=kkk,DC=com"), @("Kiado", "OU=Alkalmazott,DC=kkk,DC=com"), @("Adminisztracio", "OU=Alkalmazott,DC=kkk,DC=com"), @("Zene", "OU=Alkalmazott,DC=kkk,DC=com"), @("Marketing", "OU=Alkalmazott,DC=kkk,DC=com"), @("Csoportok", "OU=Alkalmazott,DC=kkk,DC=com"), @("Csoportok", "OU=IT,DC=kkk,DC=com"), @("Csoportok", "OU=Vezeto,DC=kkk,DC=com"))
-$csoportok = @(@("Vezeto","ou=Csoportok,ou=Vezeto,dc=kkk,dc=com"), @("Kiado","ou=Csoportok,ou=Alkalmazott,dc=kkk,dc=com"), @("Adminisztracio","ou=Csoportok,ou=Alkalmazott,dc=kkk,dc=com"), @("Zene","ou=Csoportok,ou=Alkalmazott,dc=kkk,dc=com"), @("Marketing","ou=Csoportok,ou=Alkalmazott,dc=kkk,dc=com"), @("IT","ou=Csoportok,ou=IT,dc=kkk,dc=com"))
+$ouk = @(@("Vezeto", "OU=Felhasznalok,DC=kkk,DC=com"), @("IT", "OU=Felhasznalok,DC=kkk,DC=com"), @("Vezeto", "OU=Felhasznalok,DC=kkk,DC=com"), @("Kiado", "OU=Felhasznalok,DC=kkk,DC=com"), @("Adminisztracio", "OU=Felhasznalok,DC=kkk,DC=com"), @("Zene", "OU=Felhasznalok,DC=kkk,DC=com"), @("Marketing", "OU=Felhasznalok,DC=kkk,DC=com"), @("Csoportok", "OU=Felhasznalok,DC=kkk,DC=com"))
+$csoportok = @(@("Vezeto","ou=Csoportok,ou=Felhasznalok,dc=kkk,dc=com"), @("Kiado","ou=Csoportok,ou=Felhasznalok,dc=kkk,dc=com"), @("Adminisztracio","ou=Csoportok,ou=Felhasznalok,dc=kkk,dc=com"), @("Zene","ou=Csoportok,ou=Felhasznalok,dc=kkk,dc=com"), @("Marketing","ou=Csoportok,ou=Felhasznalok,dc=kkk,dc=com"), @("IT","ou=Csoportok,ou=Felhasznalok,dc=kkk,dc=com"))
 
 # OU-k létrehozása
 foreach ($i in $ouk) {
