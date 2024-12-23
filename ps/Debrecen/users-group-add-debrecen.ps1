@@ -24,6 +24,8 @@ if (Test-Path $csvFile) {
     exit
 }
 
+$i = 1
+
 # Loop through each user in the CSV
 foreach ($user in $users) {
     try {
@@ -69,26 +71,14 @@ foreach ($user in $users) {
 
         Write-Host "A $username felhasználó sikeresen létre lett hozva a következő OU-ban: $ouPath"
 
-        # Determine the group path based on the second-level OU (Alkalmazottak or Vezeto)
-        if ($ouPath -like "*OU=Alkalmazott*") {
-            $groupOU = "OU=Csoportok,OU=Alkalmazott,DC=debrecen,DC=kkk,DC=com"
-        } elseif ($ouPath -like "*OU=Vezeto*") {
-            $groupOU = "OU=Csoportok,OU=Vezeto,DC=debrecen,DC=kkk,DC=com"
-        } elseif ($ouPath -like "*OU=IT*") {
-            $groupOU = "OU=Csoportok,OU=IT,DC=debrecen,DC=kkk,DC=com"
-        } else {
-            Write-Error "Unable to determine group OU for $fullName, invalid OU path."
-            continue
-        }
-
         # Search for the group in the determined OU
-        $groupDN = Get-ADGroup -Filter {Name -eq $groupName} -SearchBase $groupOU
+        $groupDN = Get-ADGroup -Filter {Name -eq $groupName} -SearchBase "OU=Csoportok,OU=Felhasznalok,DC=kkk,DC=com"
 
         if ($groupDN) {
             # Add the user to the group
             Add-ADGroupMember -Identity $groupDN -Members $username
-            Write-Host "A $username felhasználó hozzá lett adva a $groupName csoporthoz."
-            Write-Host " "
+            Write-Host "$i. A $username felhasználó hozzá lett adva a $groupName csoporthoz."
+            $i = $i + 1
         } else {
             Write-Error "Group $groupName not found in $groupOU."
         }
