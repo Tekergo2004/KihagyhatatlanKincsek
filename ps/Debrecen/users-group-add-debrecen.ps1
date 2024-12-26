@@ -25,6 +25,8 @@ if (Test-Path $csvFile) {
 }
 
 $i = 1
+$uid = 6000
+$gid = 1999
 
 # Loop through each user in the CSV
 foreach ($user in $users) {
