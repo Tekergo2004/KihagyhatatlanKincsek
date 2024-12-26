@@ -70,6 +70,11 @@ foreach ($user in $users) {
                    -Enabled $true `
                    -ChangePasswordAtLogon $true
 
+       Set-ADUser -Identity $Username -Add @{
+            uid = $uid;
+            gidNumber = $gid
+        }
+        $uid = $uid + 1
 
         Write-Host "A $username felhasználó sikeresen létre lett hozva a következő OU-ban: $ouPath"
 
