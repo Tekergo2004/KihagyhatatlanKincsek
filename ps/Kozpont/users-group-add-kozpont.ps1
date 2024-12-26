@@ -25,6 +25,8 @@ if (Test-Path $csvFile) {
 }
 
 $i = 1
+$uid = 5000
+$gid = 1999
 
 # Loop through each user in the CSV
 foreach ($user in $users) {
@@ -68,7 +70,12 @@ foreach ($user in $users) {
                    -Enabled $true `
                    -ChangePasswordAtLogon $true
 
-
+       Set-ADUser -Identity $Username -Add @{
+            uid = $uid;
+            gidNumber = $gid
+        }
+        $uid = $uid + 1
+        
         Write-Host "A $username felhasználó sikeresen létre lett hozva a következő OU-ban: $ouPath"
 
         # Search for the group in the determined OU
