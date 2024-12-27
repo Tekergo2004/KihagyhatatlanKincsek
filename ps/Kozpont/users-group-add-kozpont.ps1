@@ -73,6 +73,7 @@ foreach ($user in $users) {
        Set-ADUser -Identity $Username -Add @{
             uid = $uid;
             gidNumber = $gid
+            homeDirectory = "/mailboxes/$username"
         }
         $uid = $uid + 1
         
