@@ -188,7 +188,7 @@ all:
           value: "10.11.113.5"
           zonename: "kkk.com"
 
-        - name: "kkk-proxy"
+        - name: "kkk-vpn"
           value: "10.11.199.5"
           zonename: "kkk.com"
 
@@ -201,7 +201,7 @@ all:
           value: "10.11.113.5"
           zonename: "kkk.com"
 
-        - name: "kkk-proxy"
+        - name: "kkk-vpn"
           value: "10.11.199.5"
           zonename: "kkk.com"
 
@@ -214,7 +214,7 @@ all:
           value: "10.11.113.5"
           zonename: "kkk.com"
 
-        - name: "kkk-proxy"
+        - name: "kkk-vpn"
           value: "10.11.199.5"
           zonename: "kkk.com"
 
@@ -231,16 +231,12 @@ all:
           value: "2001:db8:c1c1:abfa::12"
           zonename: "kkk.com"
 
-        - name: "kkk-proxy"
+        - name: "kkk-vpn"
           value: "2001:db8:c1c1:abb5::5"
           zonename: "kkk.com"
 
       cname_records:
         - name: "mail"
-          value: "kkk-lin.kkk.com"
-          zonename: "kkk.com"
-
-        - name: "vpn"
           value: "kkk-lin.kkk.com"
           zonename: "kkk.com"
 
