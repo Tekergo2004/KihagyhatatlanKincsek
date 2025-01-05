@@ -239,7 +239,15 @@ all:
         - name: "mail"
           value: "kkk-lin.kkk.com"
           zonename: "kkk.com"
+        
+        - name: "log"
+          value: "kkk-lin.kkk.com"
+          zonename: "kkk.com"
 
+        - name: "python"
+          value: "kkk-lin.kkk.com"
+          zonename: "kkk.com"
+          
         - name: "radius"
           value: "kkk-lin.kkk.com"
           zonename: "kkk.com"
@@ -247,9 +255,9 @@ all:
         - name: "file"
           value: "kkk-adds.kkk.com"
           zonename: "kkk.com"
-
-        - name: "python"
-          value: "kkk-lin.kkk.com"
+        
+        - name: "vpn"
+          value: "kkk-vpn.kkk.com"
           zonename: "kkk.com"
 
 mainhq:
