@@ -249,7 +249,7 @@ all:
           zonename: "kkk.com"
           
         - name: "radius"
-          value: "kkk-lin.kkk.com"
+          value: "kkk-adds.kkk.com"
           zonename: "kkk.com"
 
         - name: "file"
